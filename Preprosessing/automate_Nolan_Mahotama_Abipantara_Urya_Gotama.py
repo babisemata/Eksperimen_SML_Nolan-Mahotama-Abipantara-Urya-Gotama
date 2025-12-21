@@ -86,7 +86,7 @@ def save_processed_data(X_train, X_test, y_train, y_test):
 
 
 def main():
-    raw_path = "raw_data/WA_Fn-UseC_-HR-Employee-Attrition.csv"
+    raw_path = "HR-Employee-Attrition_raw/WA_Fn-UseC_-HR-Employee-Attrition.csv"
 
     df = load_data(raw_path)
     df = drop_unused_columns(df)
