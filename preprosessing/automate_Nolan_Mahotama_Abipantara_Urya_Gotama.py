@@ -96,17 +96,30 @@ def split_and_scale(X, y):
 
 
 def save_processed_data(X_train, X_test, y_train, y_test):
-    output_dir = "HR-Employee-Attrition_preprosessing"
+    output_dir = "hr_attrition_preprocessing"
     os.makedirs(output_dir, exist_ok=True)
 
-    train_df = X_train.copy()
+    # RESET INDEX
+    X_train_scaled = X_train_scaled.reset_index(drop=True)
+    y_train = y_train.reset_index(drop=True)
+
+    X_test_scaled = X_test_scaled.reset_index(drop=True)
+    y_test = y_test.reset_index(drop=True)
+
+    train_df = X_train_scaled.copy()
     train_df['Attrition'] = y_train
 
-    test_df = X_test.copy()
+    test_df = X_test_scaled.copy()
     test_df['Attrition'] = y_test
+
+
+    print("NaN train:", train_df['Attrition'].isna().sum())
+    print("NaN test:", test_df['Attrition'].isna().sum())
 
     train_df.to_csv(f"{output_dir}/train_processed.csv", index=False)
     test_df.to_csv(f"{output_dir}/test_processed.csv", index=False)
+
+    print("Preprocessing selesai & file tersimpan.")
 
 
 def main():
@@ -119,7 +132,7 @@ def main():
 
     X, y = encode_features(df)
 
-    # SAFETY CHECK (ANTI ERROR)
+    # SAFETY CHECK
     assert X.select_dtypes(include='object').empty, "Masih ada fitur non-numerik!"
     assert y.isna().sum() == 0, "Target masih mengandung NaN!"
 
