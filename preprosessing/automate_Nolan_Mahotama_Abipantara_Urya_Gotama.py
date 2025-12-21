@@ -18,6 +18,16 @@ def drop_unused_columns(df):
     return df.drop(columns=cols_to_drop)
 
 
+def encode_target(df):
+    # Bersihkan string & encode target
+    df['Attrition'] = df['Attrition'].astype(str).str.strip()
+    df['Attrition'] = df['Attrition'].map({'Yes': 1, 'No': 0})
+
+    # Buang baris gagal mapping (safety)
+    df = df.dropna(subset=['Attrition'])
+    df['Attrition'] = df['Attrition'].astype('int64')
+
+    return df
 
 
 def binning_age(df):
@@ -26,17 +36,12 @@ def binning_age(df):
     df['AgeGroup'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels)
     return df
 
-def encode_target(df):
-    df['Attrition'] = df['Attrition'].map({
-        'Yes': 1,
-        'No': 0
-    })
-    return df
 
 def encode_features(df):
     X = df.drop(columns=['Attrition'])
     y = df['Attrition']
 
+    # Binary encoding (dipaksa numeric)
     binary_mapping = {
         'Yes': 1,
         'No': 0,
@@ -45,18 +50,25 @@ def encode_features(df):
     }
 
     for col in ['OverTime', 'Gender']:
-        X[col] = X[col].map(binary_mapping)
+        X[col] = (
+            X[col]
+            .astype(str)
+            .str.strip()
+            .map(binary_mapping)
+            .astype('int64')
+        )
 
-    nominal_cols = [
-        'BusinessTravel',
-        'Department',
-        'EducationField',
-        'JobRole',
-        'MaritalStatus',
-        'AgeGroup'
-    ]
+    # Auto-detect categorical columns (AMAN)
+    categorical_cols = X.select_dtypes(include=['object', 'category']).columns
 
-    X = pd.get_dummies(X, columns=nominal_cols, drop_first=True)
+    X = pd.get_dummies(
+        X,
+        columns=categorical_cols,
+        drop_first=True
+    )
+
+    # Final safety cast
+    X = X.astype('float64')
 
     return X, y
 
@@ -70,13 +82,17 @@ def split_and_scale(X, y):
         stratify=y
     )
 
-    numeric_cols = X_train.select_dtypes(include=['int64', 'float64']).columns
-
     scaler = StandardScaler()
-    X_train[numeric_cols] = scaler.fit_transform(X_train[numeric_cols])
-    X_test[numeric_cols] = scaler.transform(X_test[numeric_cols])
+    X_train = pd.DataFrame(
+        scaler.fit_transform(X_train),
+        columns=X_train.columns
+    )
+    X_test = pd.DataFrame(
+        scaler.transform(X_test),
+        columns=X_test.columns
+    )
 
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train.reset_index(drop=True), y_test.reset_index(drop=True)
 
 
 def save_processed_data(X_train, X_test, y_train, y_test):
@@ -84,10 +100,10 @@ def save_processed_data(X_train, X_test, y_train, y_test):
     os.makedirs(output_dir, exist_ok=True)
 
     train_df = X_train.copy()
-    train_df['Attrition'] = y_train.reset_index(drop=True)
+    train_df['Attrition'] = y_train
 
     test_df = X_test.copy()
-    test_df['Attrition'] = y_test.reset_index(drop=True)
+    test_df['Attrition'] = y_test
 
     train_df.to_csv(f"{output_dir}/train_processed.csv", index=False)
     test_df.to_csv(f"{output_dir}/test_processed.csv", index=False)
@@ -102,9 +118,17 @@ def main():
     df = binning_age(df)
 
     X, y = encode_features(df)
-    X_train, X_test, y_train, y_test = split_and_scale(X, y)
 
+    # SAFETY CHECK (ANTI ERROR)
+    assert X.select_dtypes(include='object').empty, "Masih ada fitur non-numerik!"
+    assert y.isna().sum() == 0, "Target masih mengandung NaN!"
+
+    X_train, X_test, y_train, y_test = split_and_scale(X, y)
     save_processed_data(X_train, X_test, y_train, y_test)
+
+    print("✅ Preprocessing selesai tanpa error.")
+    print("Train shape:", X_train.shape)
+    print("Test shape:", X_test.shape)
 
 
 if __name__ == "__main__":
