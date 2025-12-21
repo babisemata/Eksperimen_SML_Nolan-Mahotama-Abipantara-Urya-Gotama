@@ -23,7 +23,7 @@ def encode_target(df):
     df['Attrition'] = df['Attrition'].astype(str).str.strip()
     df['Attrition'] = df['Attrition'].map({'Yes': 1, 'No': 0})
 
-    # Buang baris gagal mapping (safety)
+    # Buang baris gagal mapping
     df = df.dropna(subset=['Attrition'])
     df['Attrition'] = df['Attrition'].astype('int64')
 
@@ -41,7 +41,7 @@ def encode_features(df):
     X = df.drop(columns=['Attrition'])
     y = df['Attrition']
 
-    # Binary encoding (dipaksa numeric)
+    # Binary encoding
     binary_mapping = {
         'Yes': 1,
         'No': 0,
@@ -58,7 +58,7 @@ def encode_features(df):
             .astype('int64')
         )
 
-    # Auto-detect categorical columns (AMAN)
+    # Auto-detect categorical columns
     categorical_cols = X.select_dtypes(include=['object', 'category']).columns
 
     X = pd.get_dummies(
@@ -126,7 +126,6 @@ def main():
     X_train, X_test, y_train, y_test = split_and_scale(X, y)
     save_processed_data(X_train, X_test, y_train, y_test)
 
-    print("✅ Preprocessing selesai tanpa error.")
     print("Train shape:", X_train.shape)
     print("Test shape:", X_test.shape)
 
