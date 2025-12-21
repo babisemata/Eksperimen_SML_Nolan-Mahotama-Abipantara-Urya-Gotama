@@ -26,21 +26,19 @@ def binning_age(df):
 
 
 def encode_features(df):
-    # Pisahkan target
     X = df.drop(columns=['Attrition'])
     y = df['Attrition']
 
-    # Binary encoding
     binary_mapping = {
         'Yes': 1,
         'No': 0,
         'Male': 1,
         'Female': 0
     }
+
     for col in ['OverTime', 'Gender']:
         X[col] = X[col].map(binary_mapping)
 
-    # One-hot encoding
     nominal_cols = [
         'BusinessTravel',
         'Department',
@@ -49,6 +47,7 @@ def encode_features(df):
         'MaritalStatus',
         'AgeGroup'
     ]
+
     X = pd.get_dummies(X, columns=nominal_cols, drop_first=True)
 
     return X, y
@@ -73,7 +72,8 @@ def split_and_scale(X, y):
 
 
 def save_processed_data(X_train, X_test, y_train, y_test):
-    os.makedirs("processed_data", exist_ok=True)
+    output_dir = "HR-Employee-Attrition_preprosessing"
+    os.makedirs(output_dir, exist_ok=True)
 
     train_df = X_train.copy()
     train_df['Attrition'] = y_train.reset_index(drop=True)
@@ -81,18 +81,20 @@ def save_processed_data(X_train, X_test, y_train, y_test):
     test_df = X_test.copy()
     test_df['Attrition'] = y_test.reset_index(drop=True)
 
-    train_df.to_csv("processed_data/train_processed.csv", index=False)
-    test_df.to_csv("processed_data/test_processed.csv", index=False)
+    train_df.to_csv(f"{output_dir}/train_processed.csv", index=False)
+    test_df.to_csv(f"{output_dir}/test_processed.csv", index=False)
 
 
 def main():
-    raw_path = "HR-Employee-Attrition_raw/WA_Fn-UseC_-HR-Employee-Attrition.csv"
+    input_path = "HR-Employee-Attrition_raw/WA_Fn-UseC_-HR-Employee-Attrition.csv"
 
-    df = load_data(raw_path)
+    df = load_data(input_path)
     df = drop_unused_columns(df)
     df = binning_age(df)
+
     X, y = encode_features(df)
     X_train, X_test, y_train, y_test = split_and_scale(X, y)
+
     save_processed_data(X_train, X_test, y_train, y_test)
 
 
