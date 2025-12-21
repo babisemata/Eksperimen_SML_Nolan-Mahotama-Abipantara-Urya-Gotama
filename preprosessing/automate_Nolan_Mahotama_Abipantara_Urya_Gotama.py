@@ -18,12 +18,20 @@ def drop_unused_columns(df):
     return df.drop(columns=cols_to_drop)
 
 
+
+
 def binning_age(df):
     age_bins = [17, 25, 35, 45, 60]
     age_labels = ['Early Career', 'Mid Career', 'Senior', 'Late Career']
     df['AgeGroup'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels)
     return df
 
+def encode_target(df):
+    df['Attrition'] = df['Attrition'].map({
+        'Yes': 1,
+        'No': 0
+    })
+    return df
 
 def encode_features(df):
     X = df.drop(columns=['Attrition'])
@@ -90,6 +98,7 @@ def main():
 
     df = load_data(input_path)
     df = drop_unused_columns(df)
+    df = encode_target(df)
     df = binning_age(df)
 
     X, y = encode_features(df)
