@@ -26,7 +26,7 @@ jobs:
 
       - name: Run preprocessing script
         run: |
-          python HR-Employee-Attrition_preprosessing/automate_Nolan_Mahotama_Abipantara_Urya_Gotama.py
+          python preprosessing/automate_Nolan_Mahotama_Abipantara_Urya_Gotama.py
 
       - name: Upload processed data
         uses: actions/upload-artifact@v4
